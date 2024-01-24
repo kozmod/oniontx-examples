@@ -1,26 +1,27 @@
-package gorm
+package sqlx
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-
-	"gorm.io/gorm"
 )
 
 type (
 	repository interface {
-		RawInsert(ctx context.Context, val string) error
-		Insert(ctx context.Context, text Text) error
+		Insert(ctx context.Context, val string) error
 	}
 
 	useCase interface {
 		CreateTextRecords(ctx context.Context, text string) error
-		CreateText(ctx context.Context, text Text) error
 	}
 
 	transactor interface {
 		WithinTx(ctx context.Context, fn func(ctx context.Context) error) (err error)
-		GetExecutor(ctx context.Context) *gorm.DB
+		GetExecutor(ctx context.Context) executor
+	}
+
+	executor interface {
+		ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	}
 )
 
@@ -70,21 +71,6 @@ func NewUseCase(textRepoA repository, textRepoB repository, transactor transacto
 }
 
 func (u *UseCase) CreateTextRecords(ctx context.Context, text string) error {
-	return u.transactor.WithinTx(ctx, func(ctx context.Context) error {
-		err := u.textRepoA.RawInsert(ctx, text)
-		if err != nil {
-			return fmt.Errorf("text repo A: %w", err)
-		}
-
-		err = u.textRepoB.RawInsert(ctx, text)
-		if err != nil {
-			return fmt.Errorf("text repo B: %w", err)
-		}
-		return nil
-	})
-}
-
-func (u *UseCase) CreateText(ctx context.Context, text Text) error {
 	return u.transactor.WithinTx(ctx, func(ctx context.Context) error {
 		err := u.textRepoA.Insert(ctx, text)
 		if err != nil {

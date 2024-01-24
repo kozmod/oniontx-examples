@@ -22,6 +22,12 @@ func Test_UseCase(t *testing.T) {
 	var (
 		db = ConnectDB(t)
 	)
+
+	t.Cleanup(func() {
+		err := db.Close()
+		assert.NoError(t, err)
+	})
+
 	t.Run("success_create", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
@@ -78,6 +84,12 @@ func Test_UseCases(t *testing.T) {
 	var (
 		db = ConnectDB(t)
 	)
+
+	t.Cleanup(func() {
+		err := db.Close()
+		assert.NoError(t, err)
+	})
+
 	t.Run("single_repository", func(t *testing.T) {
 		t.Run("success_create", func(t *testing.T) {
 			var (
@@ -148,9 +160,9 @@ func ConnectDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("pgx", connStr)
 	assert.NoError(t, err)
 
-	if err = db.Ping(); err != nil {
-		assert.NoError(t, err)
-	}
+	err = db.Ping()
+	assert.NoError(t, err)
+
 	return db
 }
 

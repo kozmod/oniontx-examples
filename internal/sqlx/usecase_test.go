@@ -1,15 +1,13 @@
-package gorm
+package sqlx
 
 import (
 	"context"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-
 	"github.com/kozmod/oniontx-examples/internal/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -18,13 +16,19 @@ const (
 
 func Test_UseCase_CreateTextRecords(t *testing.T) {
 	var (
-		db = ConnectDB(t)
+		globalCtx = context.Background()
+		db        = ConnectDB(globalCtx, t)
 	)
+
+	t.Cleanup(func() {
+		err := db.Close()
+		assert.NoError(t, err)
+	})
 
 	t.Run("success_create", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
+			transactor  = NewSqlxTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, false)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -34,23 +38,23 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 		assert.NoError(t, err)
 
 		{
-			records, err := GetTextRecords(db)
+			records, err := GetTextRecords(globalCtx, db)
 			assert.NoError(t, err)
 			assert.Len(t, records, 2)
 			for _, record := range records {
-				assert.Equal(t, Text{Val: textRecord}, record)
+				assert.Equal(t, textRecord, record)
 			}
 		}
 
 		t.Cleanup(func() {
-			err = ClearDB(db)
+			err = ClearDB(globalCtx, db)
 			assert.NoError(t, err)
 		})
 	})
 	t.Run("error_and_rollback", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
+			transactor  = NewSqlxTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, true)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -61,75 +65,14 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 		assert.ErrorIs(t, err, utils.ErrExpected)
 
 		{
-			records, err := GetTextRecords(db)
+			records, err := GetTextRecords(globalCtx, db)
 			assert.NoError(t, err)
 			assert.Len(t, records, 0)
 
 		}
 
 		t.Cleanup(func() {
-			err = ClearDB(db)
-			assert.NoError(t, err)
-		})
-	})
-}
-
-func Test_UseCase_CreateText(t *testing.T) {
-	var (
-		db = ConnectDB(t)
-
-		text = Text{
-			Val: textRecord,
-		}
-	)
-	t.Run("success_create", func(t *testing.T) {
-		var (
-			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
-			repositoryA = NewTextRepository(transactor, false)
-			repositoryB = NewTextRepository(transactor, false)
-			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
-		)
-
-		err := useCase.CreateText(ctx, text)
-		assert.NoError(t, err)
-
-		{
-			records, err := GetTextRecords(db)
-			assert.NoError(t, err)
-			assert.Len(t, records, 2)
-			for _, record := range records {
-				assert.Equal(t, Text{Val: textRecord}, record)
-			}
-		}
-
-		t.Cleanup(func() {
-			err = ClearDB(db)
-			assert.NoError(t, err)
-		})
-	})
-	t.Run("error_and_rollback", func(t *testing.T) {
-		var (
-			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
-			repositoryA = NewTextRepository(transactor, false)
-			repositoryB = NewTextRepository(transactor, true)
-			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
-		)
-
-		err := useCase.CreateText(ctx, text)
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, utils.ErrExpected)
-
-		{
-			records, err := GetTextRecords(db)
-			assert.NoError(t, err)
-			assert.Len(t, records, 0)
-
-		}
-
-		t.Cleanup(func() {
-			err = ClearDB(db)
+			err = ClearDB(globalCtx, db)
 			assert.NoError(t, err)
 		})
 	})
@@ -137,13 +80,20 @@ func Test_UseCase_CreateText(t *testing.T) {
 
 func Test_UseCases(t *testing.T) {
 	var (
-		db = ConnectDB(t)
+		globalCtx = context.Background()
+		db        = ConnectDB(globalCtx, t)
 	)
+
+	t.Cleanup(func() {
+		err := db.Close()
+		assert.NoError(t, err)
+	})
+
 	t.Run("single_repository", func(t *testing.T) {
 		t.Run("success_create", func(t *testing.T) {
 			var (
 				ctx         = context.Background()
-				transactor  = NewGormTransactor(db)
+				transactor  = NewSqlxTransactor(db)
 				repositoryA = NewTextRepository(transactor, false)
 				repositoryB = NewTextRepository(transactor, false)
 				useCases    = NewUseCases(
@@ -157,23 +107,23 @@ func Test_UseCases(t *testing.T) {
 			assert.NoError(t, err)
 
 			{
-				records, err := GetTextRecords(db)
+				records, err := GetTextRecords(globalCtx, db)
 				assert.NoError(t, err)
 				assert.Len(t, records, 4)
 				for _, record := range records {
-					assert.Equal(t, Text{Val: textRecord}, record)
+					assert.Equal(t, textRecord, record)
 				}
 			}
 
 			t.Cleanup(func() {
-				err = ClearDB(db)
+				err = ClearDB(globalCtx, db)
 				assert.NoError(t, err)
 			})
 		})
 		t.Run("error_and_rollback", func(t *testing.T) {
 			var (
 				ctx         = context.Background()
-				transactor  = NewGormTransactor(db)
+				transactor  = NewSqlxTransactor(db)
 				repositoryA = NewTextRepository(transactor, false)
 				repositoryB = NewTextRepository(transactor, true)
 				useCases    = NewUseCases(
@@ -188,38 +138,50 @@ func Test_UseCases(t *testing.T) {
 			assert.ErrorIs(t, err, utils.ErrExpected)
 
 			{
-				records, err := GetTextRecords(db)
+				records, err := GetTextRecords(globalCtx, db)
 				assert.NoError(t, err)
 				assert.Len(t, records, 0)
 			}
 
 			t.Cleanup(func() {
-				err = ClearDB(db)
+				err = ClearDB(globalCtx, db)
 				assert.NoError(t, err)
 			})
 		})
 	})
 }
 
-func ConnectDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(postgres.Open(utils.ConnectionString), &gorm.Config{})
+func ConnectDB(ctx context.Context, t *testing.T) *sqlx.DB {
+	db, err := sqlx.Connect("postgres", utils.ConnectionString)
+	assert.NoError(t, err)
+
+	err = db.Ping()
 	assert.NoError(t, err)
 	return db
 }
 
-func ClearDB(db *gorm.DB) error {
-	ex := db.Exec(`TRUNCATE TABLE text;`)
-	if ex.Error != nil {
-		return fmt.Errorf("clear DB: %w", ex.Error)
+func ClearDB(ctx context.Context, db *sqlx.DB) error {
+	_, err := db.ExecContext(ctx, `TRUNCATE TABLE text;`)
+	if err != nil {
+		return fmt.Errorf("clear DB: %w", err)
 	}
 	return nil
 }
 
-func GetTextRecords(db *gorm.DB) ([]Text, error) {
-	var texts []Text
-	db = db.Find(&texts)
-	if err := db.Error; err != nil {
+func GetTextRecords(ctx context.Context, db *sqlx.DB) ([]string, error) {
+	row, err := db.QueryContext(ctx, "SELECT val FROM text;")
+	if err != nil {
 		return nil, fmt.Errorf("get `text` records: %w", err)
+	}
+
+	var texts []string
+	for row.Next() {
+		var text string
+		err = row.Scan(&text)
+		if err != nil {
+			return nil, fmt.Errorf("scan `text` records: %w", err)
+		}
+		texts = append(texts, text)
 	}
 	return texts, nil
 }

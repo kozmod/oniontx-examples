@@ -4,7 +4,9 @@ go 1.21
 
 require (
 	github.com/jackc/pgx/v5 v5.5.1
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/kozmod/oniontx v0.2.4
+	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.8.4
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5

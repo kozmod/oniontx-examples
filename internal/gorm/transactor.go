@@ -1,4 +1,4 @@
-package stdlib
+package gorm
 
 import (
 	"context"
@@ -34,6 +34,7 @@ func (t *DB) BeginTx(_ context.Context, opts ...oniontx.Option[*sql.TxOptions]) 
 	return &DB{DB: tx}, nil
 }
 
+//goland:noinspection GoNameStartsWithPackageName
 type GormTransactor struct {
 	*oniontx.Transactor[*DB, *DB, *sql.TxOptions]
 }
