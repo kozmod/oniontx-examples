@@ -46,6 +46,7 @@ func NewPgxTransactor(conn *pgx.Conn) *PgxTransactor {
 	}
 }
 
+//goland:noinspection GoExportedFuncWithUnexportedType
 func (t *PgxTransactor) GetExecutor(ctx context.Context) executor {
 	tx, ok := t.TryGetTx(ctx)
 	if ok {

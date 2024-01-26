@@ -49,6 +49,7 @@ func NewSqlxTransactor(db *sqlx.DB) *SqlxTransactor {
 	}
 }
 
+//goland:noinspection GoExportedFuncWithUnexportedType
 func (t *SqlxTransactor) GetExecutor(ctx context.Context) executor {
 	tx, ok := t.TryGetTx(ctx)
 	if ok {
