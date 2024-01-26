@@ -6,6 +6,11 @@ tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 	go mod tidy
 	go vet ./...
 
+.PHONT: tools.update
+tools.update: ## Update or install tools
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/vektra/mockery/v2@v2.40.1
+
 .PHONT: deps.update
 deps.update: ## Update dependencies versions
 	go get -u all
