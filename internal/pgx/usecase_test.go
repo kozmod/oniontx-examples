@@ -2,12 +2,12 @@ package pgx
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/kozmod/oniontx-examples/internal/utils"
+	opgx "github.com/kozmod/oniontx/pgx"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kozmod/oniontx-examples/internal/entity"
 )
 
 const (
@@ -28,7 +28,7 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 	t.Run("success_create", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewPgxTransactor(db)
+			transactor  = opgx.NewTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, false)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -54,7 +54,7 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 	t.Run("error_and_rollback", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewPgxTransactor(db)
+			transactor  = opgx.NewTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, true)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -62,7 +62,7 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 
 		err := useCase.CreateTextRecords(ctx, textRecord)
 		assert.Error(t, err)
-		assert.ErrorIs(t, err, utils.ErrExpected)
+		assert.ErrorIs(t, err, entity.ErrExpected)
 
 		{
 			records, err := GetTextRecords(globalCtx, db)
@@ -93,7 +93,7 @@ func Test_UseCases(t *testing.T) {
 		t.Run("success_create", func(t *testing.T) {
 			var (
 				ctx         = context.Background()
-				transactor  = NewPgxTransactor(db)
+				transactor  = opgx.NewTransactor(db)
 				repositoryA = NewTextRepository(transactor, false)
 				repositoryB = NewTextRepository(transactor, false)
 				useCases    = NewUseCases(
@@ -123,7 +123,7 @@ func Test_UseCases(t *testing.T) {
 		t.Run("error_and_rollback", func(t *testing.T) {
 			var (
 				ctx         = context.Background()
-				transactor  = NewPgxTransactor(db)
+				transactor  = opgx.NewTransactor(db)
 				repositoryA = NewTextRepository(transactor, false)
 				repositoryB = NewTextRepository(transactor, true)
 				useCases    = NewUseCases(
@@ -135,7 +135,7 @@ func Test_UseCases(t *testing.T) {
 
 			err := useCases.CreateTextRecords(ctx, textRecord)
 			assert.Error(t, err)
-			assert.ErrorIs(t, err, utils.ErrExpected)
+			assert.ErrorIs(t, err, entity.ErrExpected)
 
 			{
 				records, err := GetTextRecords(globalCtx, db)
@@ -149,39 +149,4 @@ func Test_UseCases(t *testing.T) {
 			})
 		})
 	})
-}
-
-func ConnectDB(ctx context.Context, t *testing.T) *pgx.Conn {
-	conn, err := pgx.Connect(ctx, utils.ConnectionString)
-	assert.NoError(t, err)
-
-	err = conn.Ping(ctx)
-	assert.NoError(t, err)
-	return conn
-}
-
-func ClearDB(ctx context.Context, db *pgx.Conn) error {
-	_, err := db.Exec(ctx, `TRUNCATE TABLE text;`)
-	if err != nil {
-		return fmt.Errorf("clear DB: %w", err)
-	}
-	return nil
-}
-
-func GetTextRecords(ctx context.Context, db *pgx.Conn) ([]string, error) {
-	row, err := db.Query(ctx, "SELECT val FROM text;")
-	if err != nil {
-		return nil, fmt.Errorf("get `text` records: %w", err)
-	}
-
-	var texts []string
-	for row.Next() {
-		var text string
-		err = row.Scan(&text)
-		if err != nil {
-			return nil, fmt.Errorf("scan `text` records: %w", err)
-		}
-		texts = append(texts, text)
-	}
-	return texts, nil
 }

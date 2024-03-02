@@ -4,17 +4,23 @@ import (
 	"context"
 	"fmt"
 
-	oniontx "github.com/kozmod/oniontx/stdlib"
+	ostdlib "github.com/kozmod/oniontx/stdlib"
 
-	"github.com/kozmod/oniontx-examples/internal/utils"
+	"github.com/kozmod/oniontx-examples/internal/entity"
+)
+
+type (
+	repoTransactor interface {
+		GetExecutor(ctx context.Context) ostdlib.Executor
+	}
 )
 
 type TextRepository struct {
-	transactor    *oniontx.Transactor
+	transactor    repoTransactor
 	errorExpected bool
 }
 
-func NewTextRepository(transactor *oniontx.Transactor, errorExpected bool) *TextRepository {
+func NewTextRepository(transactor repoTransactor, errorExpected bool) *TextRepository {
 	return &TextRepository{
 		transactor:    transactor,
 		errorExpected: errorExpected,
@@ -23,7 +29,7 @@ func NewTextRepository(transactor *oniontx.Transactor, errorExpected bool) *Text
 
 func (r *TextRepository) Insert(ctx context.Context, val string) error {
 	if r.errorExpected {
-		return utils.ErrExpected
+		return entity.ErrExpected
 	}
 	ex := r.transactor.GetExecutor(ctx)
 	_, err := ex.ExecContext(ctx, `INSERT INTO text (val) VALUES ($1)`, val)

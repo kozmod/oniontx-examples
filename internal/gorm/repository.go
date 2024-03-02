@@ -4,7 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kozmod/oniontx-examples/internal/utils"
+	"gorm.io/gorm"
+
+	"github.com/kozmod/oniontx-examples/internal/entity"
+)
+
+type (
+	repoTransactor interface {
+		GetExecutor(ctx context.Context) *gorm.DB
+	}
 )
 
 type Text struct {
@@ -16,11 +24,11 @@ func (t *Text) TableName() string {
 }
 
 type TextRepository struct {
-	transactor    transactor
+	transactor    repoTransactor
 	errorExpected bool
 }
 
-func NewTextRepository(transactor transactor, errorExpected bool) *TextRepository {
+func NewTextRepository(transactor repoTransactor, errorExpected bool) *TextRepository {
 	return &TextRepository{
 		transactor:    transactor,
 		errorExpected: errorExpected,
@@ -29,7 +37,7 @@ func NewTextRepository(transactor transactor, errorExpected bool) *TextRepositor
 
 func (r *TextRepository) RawInsert(ctx context.Context, val string) error {
 	if r.errorExpected {
-		return utils.ErrExpected
+		return entity.ErrExpected
 	}
 	ex := r.transactor.GetExecutor(ctx)
 	ex = ex.Exec(`INSERT INTO text (val) VALUES ($1)`, val)
@@ -41,7 +49,7 @@ func (r *TextRepository) RawInsert(ctx context.Context, val string) error {
 
 func (r *TextRepository) Insert(ctx context.Context, text Text) error {
 	if r.errorExpected {
-		return utils.ErrExpected
+		return entity.ErrExpected
 	}
 	ex := r.transactor.GetExecutor(ctx)
 	ex = ex.Create(text)

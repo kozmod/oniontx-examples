@@ -2,14 +2,12 @@ package gorm
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
+	ogorm "github.com/kozmod/oniontx/gorm"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
-	"github.com/kozmod/oniontx-examples/internal/utils"
+	"github.com/kozmod/oniontx-examples/internal/entity"
 )
 
 const (
@@ -24,7 +22,7 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 	t.Run("success_create", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
+			transactor  = ogorm.NewTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, false)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -50,7 +48,7 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 	t.Run("error_and_rollback", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
+			transactor  = ogorm.NewTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, true)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -58,7 +56,7 @@ func Test_UseCase_CreateTextRecords(t *testing.T) {
 
 		err := useCase.CreateTextRecords(ctx, textRecord)
 		assert.Error(t, err)
-		assert.ErrorIs(t, err, utils.ErrExpected)
+		assert.ErrorIs(t, err, entity.ErrExpected)
 
 		{
 			records, err := GetTextRecords(db)
@@ -85,7 +83,7 @@ func Test_UseCase_CreateText(t *testing.T) {
 	t.Run("success_create", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
+			transactor  = ogorm.NewTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, false)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -111,7 +109,7 @@ func Test_UseCase_CreateText(t *testing.T) {
 	t.Run("error_and_rollback", func(t *testing.T) {
 		var (
 			ctx         = context.Background()
-			transactor  = NewGormTransactor(db)
+			transactor  = ogorm.NewTransactor(db)
 			repositoryA = NewTextRepository(transactor, false)
 			repositoryB = NewTextRepository(transactor, true)
 			useCase     = NewUseCase(repositoryA, repositoryB, transactor)
@@ -119,7 +117,7 @@ func Test_UseCase_CreateText(t *testing.T) {
 
 		err := useCase.CreateText(ctx, text)
 		assert.Error(t, err)
-		assert.ErrorIs(t, err, utils.ErrExpected)
+		assert.ErrorIs(t, err, entity.ErrExpected)
 
 		{
 			records, err := GetTextRecords(db)
@@ -143,7 +141,7 @@ func Test_UseCases(t *testing.T) {
 		t.Run("success_create", func(t *testing.T) {
 			var (
 				ctx         = context.Background()
-				transactor  = NewGormTransactor(db)
+				transactor  = ogorm.NewTransactor(db)
 				repositoryA = NewTextRepository(transactor, false)
 				repositoryB = NewTextRepository(transactor, false)
 				useCases    = NewUseCases(
@@ -173,7 +171,7 @@ func Test_UseCases(t *testing.T) {
 		t.Run("error_and_rollback", func(t *testing.T) {
 			var (
 				ctx         = context.Background()
-				transactor  = NewGormTransactor(db)
+				transactor  = ogorm.NewTransactor(db)
 				repositoryA = NewTextRepository(transactor, false)
 				repositoryB = NewTextRepository(transactor, true)
 				useCases    = NewUseCases(
@@ -185,7 +183,7 @@ func Test_UseCases(t *testing.T) {
 
 			err := useCases.CreateTextRecords(ctx, textRecord)
 			assert.Error(t, err)
-			assert.ErrorIs(t, err, utils.ErrExpected)
+			assert.ErrorIs(t, err, entity.ErrExpected)
 
 			{
 				records, err := GetTextRecords(db)
@@ -199,27 +197,4 @@ func Test_UseCases(t *testing.T) {
 			})
 		})
 	})
-}
-
-func ConnectDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(postgres.Open(utils.ConnectionString), &gorm.Config{})
-	assert.NoError(t, err)
-	return db
-}
-
-func ClearDB(db *gorm.DB) error {
-	ex := db.Exec(`TRUNCATE TABLE text;`)
-	if ex.Error != nil {
-		return fmt.Errorf("clear DB: %w", ex.Error)
-	}
-	return nil
-}
-
-func GetTextRecords(db *gorm.DB) ([]Text, error) {
-	var texts []Text
-	db = db.Find(&texts)
-	if err := db.Error; err != nil {
-		return nil, fmt.Errorf("get `text` records: %w", err)
-	}
-	return texts, nil
 }

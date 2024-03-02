@@ -3,8 +3,6 @@ package pgx
 import (
 	"context"
 	"fmt"
-
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type (
@@ -18,11 +16,6 @@ type (
 
 	transactor interface {
 		WithinTx(ctx context.Context, fn func(ctx context.Context) error) (err error)
-		GetExecutor(ctx context.Context) executor
-	}
-
-	executor interface {
-		Exec(c context.Context, sql string, arguments ...any) (commandTag pgconn.CommandTag, err error)
 	}
 )
 

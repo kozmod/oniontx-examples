@@ -20,9 +20,17 @@ deps.update: ## Update dependencies versions
 go.sync: ## Sync modules
 	go work sync
 
+.PHONT: test
+test: ## Run all tests
+	go test ./...
+
 .PHONY: up
 up: ## Up dest database
 	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose -f docker-compose.yml up
+
+.PHONY: up.d
+up.d: ## Up dest database (detached)
+	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose -f docker-compose.yml up -d
 
 .PHONY: help
 help: ## List all make targets with description
