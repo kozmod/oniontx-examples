@@ -2,7 +2,6 @@ package sqlx
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 )
 
@@ -17,11 +16,6 @@ type (
 
 	transactor interface {
 		WithinTx(ctx context.Context, fn func(ctx context.Context) error) (err error)
-		GetExecutor(ctx context.Context) executor
-	}
-
-	executor interface {
-		ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	}
 )
 

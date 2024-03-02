@@ -40,11 +40,11 @@ func main() {
 	connStr := stdlib.RegisterConnConfig(connConfig)
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
-		log.Fatal(errors.WithMessage(err, "open utils"))
+		log.Fatal(errors.WithMessage(err, "open db"))
 	}
 
 	if err := retryPing(db, 3, 30*time.Second); err != nil {
-		log.Fatal(errors.WithMessage(err, "ping utils"))
+		log.Fatal(errors.WithMessage(err, "ping db"))
 	}
 
 	goose.SetBaseFS(embedMigrations)

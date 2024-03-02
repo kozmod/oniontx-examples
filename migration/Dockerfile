@@ -5,7 +5,6 @@ RUN --mount=type=cache,target=/var/cache/apk apk --update --upgrade add ca-certi
 ENV GO111MODULE on
 ENV CGO_ENABLED 1
 ENV GOOS linux
-ENV GOARCH amd64
 
 WORKDIR /go/migration
 ADD . /go/migration
